@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using MicroWaveAPI.Contracts;
 using MicroWaveAPI.Data;
+using MicroWaveAPI.Exceptions;
+using MicroWaveAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Services.AddScoped<IHeatingModeService, HeatingModeService>();
 //Conexão com o banco de dados
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -17,6 +20,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Registra tratamento de exceção global
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
