@@ -120,16 +120,8 @@ public class HeatingHub(IHeatingModeService heatingModeService) : Hub
             await ProcessHeating(connectionId, heatingProcess);
             return;
         }
-        var newHeatingProcess = new HeatingProcessDto
-        {
-            Power = 10,
-            TimeRemaining = 30,
-            IsPaused = false,
-            IsCanceled = false,
-            StringIndicator = new string('.', 10),
-            AllowsAdditionalTime = true
-        };
-        await StartHeating(newHeatingProcess);
+
+        await StartDefault(10, 30);
     }
     
     // Reinicia o processo de aquecimento
