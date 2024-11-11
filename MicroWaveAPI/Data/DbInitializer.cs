@@ -32,6 +32,7 @@ public class DbInitializer(ApplicationDbContext context) : IDbInitializer
                 Food = "Pipoca (de micro-ondas)",
                 Time = 180,
                 Power = 7,
+                CharIndicator = 'P',
                 Instructions =
                     "Observar o barulho de estouros do milho, caso houver um intervalo de mais de 10 segundos entre um estouro e outro, interrompa o aquecimento."
             },
@@ -42,6 +43,7 @@ public class DbInitializer(ApplicationDbContext context) : IDbInitializer
                 Food = "Leite",
                 Time = 300,
                 Power = 5,
+                CharIndicator = 'L',
                 Instructions =
                     "Cuidado com aquecimento de líquidos, o choque térmico aliado ao movimento do recipiente pode\ncausar fervura imediata causando risco de queimaduras."
             },
@@ -52,6 +54,7 @@ public class DbInitializer(ApplicationDbContext context) : IDbInitializer
                 Food = "Carne em pedaço ou fatias",
                 Time = 840,
                 Power = 4,
+                CharIndicator = 'C',
                 Instructions =
                     "Interrompa o processo na metade e vire o conteúdo com a parte de baixo para cima para o descongelamento uniforme."
             },
@@ -62,6 +65,7 @@ public class DbInitializer(ApplicationDbContext context) : IDbInitializer
                 Food = "Frango (qualquer corte)",
                 Time = 480,
                 Power = 7,
+                CharIndicator = 'F',
                 Instructions =
                     "Interrompa o processo na metade e vire o conteúdo com a parte de baixo para cima para o descongelamento uniforme."
             },
@@ -72,6 +76,7 @@ public class DbInitializer(ApplicationDbContext context) : IDbInitializer
                 Food = "Feijão congelado",
                 Time = 480,
                 Power = 9,
+                CharIndicator = 'J',
                 Instructions =
                     "Interrompa o processo na metade e vire o conteúdo com a parte de baixo para cima para o descongelamento uniforme."
             }

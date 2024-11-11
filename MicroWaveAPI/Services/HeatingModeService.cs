@@ -37,8 +37,10 @@ public class HeatingModeService(ApplicationDbContext context) : IHeatingModeServ
 
     public async Task<HeatingMode> UpdateAsync(HeatingMode heatingMode)
     {
-        var entity = await GetByIdAsync(heatingMode.Id);
+        if (heatingMode.Id is >= 1 and <= 5) throw new BadRequestException("Default heating modes cannot be changed");
         
+        var entity = await GetByIdAsync(heatingMode.Id);
+           
         HeatingModeMapper.ValidateEntity(heatingMode);
 
         entity.Food = heatingMode.Food;

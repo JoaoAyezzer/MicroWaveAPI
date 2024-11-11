@@ -37,10 +37,19 @@ public static class HeatingModeMapper
 
         if (dto.Power <= 0)
             errors.Add("Power must be greater than 0.");
-
+        switch (dto.CharIndicator)
+        {
+            case null:
+                errors.Add("CharIndicator is required.");
+                break;
+            case '.':
+                errors.Add("Reserved character");
+                break;
+        }
         // Se houver erros, lançar uma exceção
         if (errors.Count != 0)
             throw new BadRequestException(string.Join(" ", errors));
+        
     }
     public static void ValidateEntity(HeatingMode heatingMode)
     {
@@ -52,13 +61,24 @@ public static class HeatingModeMapper
 
         if (string.IsNullOrWhiteSpace(heatingMode.Food))
             errors.Add("Food is required.");
-
+        
+        if (heatingMode.CharIndicator == null)
+            errors.Add("CharIndicator is required.");
+        
         if (heatingMode.Time <= 0)
             errors.Add("Time must be greater than 0.");
 
         if (heatingMode.Power <= 0)
             errors.Add("Power must be greater than 0.");
-
+        switch (heatingMode.CharIndicator)
+        {
+            case null:
+                errors.Add("CharIndicator is required.");
+                break;
+            case '.':
+                errors.Add("Reserved character");
+                break;
+        }
         // Se houver erros, lançar uma exceção
         if (errors.Count != 0)
             throw new BadRequestException(string.Join(" ", errors));

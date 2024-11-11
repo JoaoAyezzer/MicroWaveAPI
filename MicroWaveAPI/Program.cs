@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MicroWaveAPI.Contracts;
 using MicroWaveAPI.Data;
 using MicroWaveAPI.Exceptions;
+using MicroWaveAPI.Hubs;
 using MicroWaveAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -30,6 +32,10 @@ service?.Initialize();
 
 // Registra tratamento de exceção global
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+//Hub websocket
+app.MapHub<HeatingHub>("/heatingHub");
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
