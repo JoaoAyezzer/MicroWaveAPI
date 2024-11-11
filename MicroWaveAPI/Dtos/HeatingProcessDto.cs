@@ -6,5 +6,6 @@ public class HeatingProcessDto
     public int TimeRemaining { get; set; }
     public bool IsPaused { get; set; }
     public bool IsCanceled { get; set; }
-    public string StringIndicator { get; set; }
+    public string? StringIndicator { get; set; }
+    public bool AllowsAdditionalTime { get; set; }
 }

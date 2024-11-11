@@ -1,57 +1,74 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
+using MicroWaveAPI.Contracts;
 using MicroWaveAPI.Dtos;
 
 namespace MicroWaveAPI.Hubs;
 
-public class HeatingHub : Hub
+public class HeatingHub(IHeatingModeService heatingModeService) : Hub
 {
     // Lista concorrente para armazenar os processos de aquecimento
     private static readonly ConcurrentDictionary<string, HeatingProcessDto> HeatingProcesses = new();
 
-    // Inicia o processo de aquecimento
-    public async Task StartHeating(int power, int timeInSeconds, char charIndicator)
+    public async Task StartDefault(int power, int timeInSeconds)
     {
-        var connectionId = Context.ConnectionId;
-
-
-        // Verifica se já existe um processo em andamento para esse cliente
-        if (HeatingProcesses.ContainsKey(connectionId))
-        {
-            await Clients.Caller.SendAsync("ReceiveError", "Já existe um processo de aquecimento em andamento.");
-            return;
-        }
-        
-        // Verifica a potencia informada
-        if (power is > 10 or < 1)
-        {
-            await Clients.Caller.SendAsync("ReceiveError", "A potencia deve ser entre 1 e 10");
-            return;
-        }
-        
         // Verifica o tempo informado
         if (timeInSeconds is > 120 or < 1)
         {
-            await Clients.Caller.SendAsync("ReceiveError", "O tempo de aquecimento deve ser maior que 1 segundo e menor que 2 minutos");
+            await Clients.Caller.SendAsync("ReceiveError", "Heating time must be greater than 1 second and less than 2 minutes");
             return;
         }
-        
-        
         var heatingProcess = new HeatingProcessDto
         {
             Power = power,
             TimeRemaining = timeInSeconds,
             IsPaused = false,
             IsCanceled = false,
-            StringIndicator = new string(charIndicator, power)
+            StringIndicator = new string('.', power),
+            AllowsAdditionalTime = true
         };
+        await StartHeating(heatingProcess);
+    }
+
+    public async Task StartRegisteredHeatingMode(long modeId)
+    {
+        var heatingMode = await heatingModeService.GetByIdAsync(modeId);
+        var heatingProcess = new HeatingProcessDto
+        {
+            Power = heatingMode.Power,
+            TimeRemaining = heatingMode.Time,
+            IsPaused = false,
+            IsCanceled = false,
+            StringIndicator = new string(heatingMode.CharIndicator, heatingMode.Power),
+            AllowsAdditionalTime = false
+        };
+        await StartHeating(heatingProcess);
+    }
+
+    // Inicia o processo de aquecimento
+    private async Task StartHeating(HeatingProcessDto heatingProcess)
+    {
+        var connectionId = Context.ConnectionId;
+        
+        // Verifica se já existe um processo em andamento para esse cliente
+        if (HeatingProcesses.ContainsKey(connectionId))
+        {
+            await Clients.Caller.SendAsync("ReceiveError", "A heating process is already in progress.");
+            return;
+        }
+        
+        // Verifica a potencia informada
+        if (heatingProcess.Power is > 10 or < 1)
+        {
+            await Clients.Caller.SendAsync("ReceiveError", "Power must be between 1 and 10");
+            return;
+        }
 
         HeatingProcesses[connectionId] = heatingProcess;
 
         await ProcessHeating(connectionId, heatingProcess);
     }
 
-  
     // Pausa o processo
     public async Task PauseHeating()
     {
@@ -59,14 +76,14 @@ public class HeatingHub : Hub
 
         if (!HeatingProcesses.ContainsKey(connectionId))
         {
-            await Clients.Caller.SendAsync("ReceiveError", "Nenhum processo de aquecimento em andamento.");
+            await Clients.Caller.SendAsync("ReceiveError", "No heating process in progress.");
             return;
         }
 
         var heatingProcess = HeatingProcesses[connectionId];
         heatingProcess.IsPaused = true;
 
-        await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, heatingProcess.TimeRemaining, "Pausado");
+        await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, heatingProcess.TimeRemaining, "Paused");
     }
 
     // Cancela o processo de aquecimento
@@ -76,30 +93,43 @@ public class HeatingHub : Hub
 
         if (!HeatingProcesses.ContainsKey(connectionId))
         {
-            await Clients.Caller.SendAsync("ReceiveError", "Nenhum processo de aquecimento em andamento.");
+            await Clients.Caller.SendAsync("ReceiveError", "No heating process in progress.");
             return;
         }
 
         var heatingProcess = HeatingProcesses[connectionId];
         heatingProcess.IsCanceled = true;
 
-        await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, 0, "Cancelado");
+        await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, 0, "Canceled");
         HeatingProcesses.TryRemove(connectionId, out _); // Remove o processo da lista
     }
 
-    //Inicio Rapido e incremento de tempo
+    // Inicio Rápido e incremento de tempo
     public async Task QuickStartHeating()
     {
         var connectionId = Context.ConnectionId;
         if (HeatingProcesses.ContainsKey(connectionId))
         {
             var heatingProcess = HeatingProcesses[connectionId];
+            if (!heatingProcess.AllowsAdditionalTime)
+            {
+                await Clients.Caller.SendAsync("ReceiveError", "This process cannot be modified.");
+                return;
+            }
             heatingProcess.TimeRemaining += 30;
             await ProcessHeating(connectionId, heatingProcess);
             return;
         }
-
-        await StartHeating(10, 30, '.');
+        var newHeatingProcess = new HeatingProcessDto
+        {
+            Power = 10,
+            TimeRemaining = 30,
+            IsPaused = false,
+            IsCanceled = false,
+            StringIndicator = new string('.', 10),
+            AllowsAdditionalTime = true
+        };
+        await StartHeating(newHeatingProcess);
     }
     
     // Reinicia o processo de aquecimento
@@ -109,7 +139,7 @@ public class HeatingHub : Hub
 
         if (!HeatingProcesses.ContainsKey(connectionId))
         {
-            await Clients.Caller.SendAsync("ReceiveError", "Nenhum processo de aquecimento foi pausado.");
+            await Clients.Caller.SendAsync("ReceiveError", "No paused heating process.");
             return;
         }
 
@@ -123,7 +153,7 @@ public class HeatingHub : Hub
         }
         else
         {
-            await Clients.Caller.SendAsync("ReceiveError", "Não há processo pausado para reiniciar.");
+            await Clients.Caller.SendAsync("ReceiveError", "There is no paused process to restart.");
         }
     }
 
@@ -134,24 +164,23 @@ public class HeatingHub : Hub
         {
             if (heatingProcess.IsCanceled)
             {
-                await Clients.Caller.SendAsync("HeatingFinished", "Aquecimento cancelado.");
+                await Clients.Caller.SendAsync("HeatingFinished", "Heating canceled.");
                 return;
             }
 
             if (heatingProcess.IsPaused)
             {
-                await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, remainingTime, "Pausado");
+                await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, remainingTime, "Paused");
                 return; 
             }
             
             // Envia a atualização de status para o cliente que iniciou o processo
-            await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, remainingTime, heatingProcess.StringIndicator, "Aquecendo");
+            await Clients.Caller.SendAsync("ReceiveUpdate", heatingProcess.Power, remainingTime, heatingProcess.StringIndicator, "Heating");
 
             await Task.Delay(1000); 
         }
 
-  
-        await Clients.Caller.SendAsync("HeatingFinished", "Aquecimento concluído!");
+        await Clients.Caller.SendAsync("HeatingFinished", "Heating completed!");
         
         HeatingProcesses.TryRemove(connectionId, out _); 
     }

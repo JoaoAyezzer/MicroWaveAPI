@@ -15,5 +15,5 @@ public class HeatingMode
     public int Power { get; set; }
     public string? Instructions { get; set; }
     
-    public char? CharIndicator { get; set; }
+    public char CharIndicator { get; set; }
 }

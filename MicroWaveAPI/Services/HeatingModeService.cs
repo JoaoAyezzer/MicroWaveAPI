@@ -55,6 +55,7 @@ public class HeatingModeService(ApplicationDbContext context) : IHeatingModeServ
 
     public async Task<bool> DeleteAsync(long id)
     {
+        if (id is >= 1 and <= 5) throw new BadRequestException("Default heating modes cannot be deleted");
         var entity = await GetByIdAsync(id);
         try
         {
