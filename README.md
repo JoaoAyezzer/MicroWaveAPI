@@ -1,4 +1,4 @@
-# API de Programas de Aquecimento
+# API de Microondas Digital
 
 Esta é uma API desenvolvida com C# ASP.NET Core 8 que fornece endpoints para operações CRUD de programas de aquecimento e métodos WebSocket (usando SignalR) para controlar o estado do aquecimento (iniciar, pausar, cancelar e reiniciar).
 
